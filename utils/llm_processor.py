@@ -9,8 +9,8 @@ from config import OPENAI_API_KEY, OPENAI_MODEL
 api_key = OPENAI_API_KEY
 client = OpenAI(api_key=api_key)
 
-def generate_personas(client,comments_df, num_personas=3):
-   
+def generate_personas(comments_df, num_personas=3):
+    """Generate personas based on comments."""
     sample_size = min(100, len(comments_df))
     sample_comments = comments_df.sample(sample_size)['text'].tolist()
     
@@ -26,34 +26,58 @@ def generate_personas(client,comments_df, num_personas=3):
     
     Return the response as a JSON array of persona objects with 'name', 'description', and 'characteristics' fields.
     """
-    response = client.chat.completions.create(
-        model=OPENAI_MODEL,
-        messages=[
-            {"role": "system", "content": "You are an expert in analyzing social media comments and identifying distinct user personas."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.7,
-        max_tokens=1500
-    )
     
     try:
-        content = response.choices[0].message.content
-        start_idx = content.find('[')
-        end_idx = content.rfind(']') + 1
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": "You are an expert in analyzing social media comments and identifying distinct user personas."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1500
+        )
         
-        if start_idx >= 0 and end_idx > start_idx:
-            personas_json = content[start_idx:end_idx]
-            personas = json.loads(personas_json)
-        else:
-            personas = []
-            for i in range(num_personas):
-                personas.append({
-                    "name": f"Persona {i+1}",
-                    "description": f"Description for persona {i+1}",
-                    "characteristics": ["characteristic 1", "characteristic 2"]
-                })
+        content = response.choices[0].message.content
+        
+        # Attempt to parse JSON directly if possible
+        try:
+            personas = json.loads(content)
+        except json.JSONDecodeError:
+            # If not directly parseable, try to extract JSON from the content
+            start_idx = content.find('[')
+            end_idx = content.rfind(']') + 1
+            
+            if start_idx >= 0 and end_idx > start_idx:
+                personas_json = content[start_idx:end_idx]
+                personas = json.loads(personas_json)
+            else:
+                # Default personas if parsing fails
+                personas = []
+                for i in range(num_personas):
+                    personas.append({
+                        "name": f"Persona {i+1}",
+                        "description": f"Description for persona {i+1}",
+                        "characteristics": ["characteristic 1", "characteristic 2"]
+                    })
+        
+        return personas
+    
+    # except Exception as e:
+    #     print(f"OpenAI API Connection Error: {e}")
+    #     # Handle connection error, e.g., by retrying or returning default personas
+    #     personas = []
+    #     for i in range(num_personas):
+    #         personas.append({
+    #             "name": f"Persona {i+1}",
+    #             "description": f"Description for persona {i+1}",
+    #             "characteristics": ["characteristic 1", "characteristic 2"]
+    #         })
+    #     return personas
+    
     except Exception as e:
-        print(f"Error parsing personas: {e}")
+        print(f"Error generating personas: {e}")
+        # Handle other exceptions, e.g., by returning default personas
         personas = []
         for i in range(num_personas):
             personas.append({
@@ -61,14 +85,12 @@ def generate_personas(client,comments_df, num_personas=3):
                 "description": f"Description for persona {i+1}",
                 "characteristics": ["characteristic 1", "characteristic 2"]
             })
-    
-    return personas
+        return personas
 
-def summarize_comments(client, comments_df, personas):
+def summarize_comments(comments_df, personas):
     
     summaries = {}
     
-    # Sample comments to summarize (to avoid token limits)
     sample_size = min(200, len(comments_df))
     sample_comments = comments_df.sample(sample_size)['text'].tolist()
     
@@ -101,7 +123,7 @@ def summarize_comments(client, comments_df, personas):
     
     return summaries
 
-def extract_useful_content(client, negative_comment):
+def extract_useful_content(negative_comment):
     
     prompt = f"""
     The following is a negative comment from YouTube. Extract any useful feedback or constructive criticism from it,

@@ -40,8 +40,11 @@ def create_personas():
     
     comments_df = pd.read_csv(comments_path)
     
-    personas = generate_personas(comments_df, num_personas)
-    
+    try:
+        personas = generate_personas(comments_df, num_personas)
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to generate personas: {e}'})
+
     personas_dir = os.path.join(app.config['DATA_DIR'], 'personas')
     os.makedirs(personas_dir, exist_ok=True)
     with open(os.path.join(personas_dir, f'{youtube_id}_personas.json'), 'w') as f:

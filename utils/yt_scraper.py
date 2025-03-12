@@ -25,7 +25,7 @@ def download_comments(video_id_or_url, max_comments=MAX_COMMENTS_PER_VIDEO):
         else:
             video_id = video_id_or_url
         
-        comments = downloader.get_comments_from_url(video_url, sort_by=SORT_BY_POPULAR)
+        comments = downloader.get_comments_from_url(video_url)
         
         all_comments_dict = {
             'cid': [],
@@ -34,10 +34,10 @@ def download_comments(video_id_or_url, max_comments=MAX_COMMENTS_PER_VIDEO):
             'author': [],
             'channel': [],
             'votes': [],
-            'replies': [],
-            'photo': [],
-            'heart': [],
-            'reply': [],
+            # 'replies': [],
+            # 'photo': [],
+            # 'heart': [],
+            # 'reply': [],
             'time_parsed': []
         }
         
