@@ -65,3 +65,4 @@ def download_twitch_chat(vod_id, max_comments=MAX_COMMENTS_PER_VIDEO):
     
     except Exception as e:
         return False, f"Error: {str(e)}"
+    

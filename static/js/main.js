@@ -45,7 +45,7 @@ function setupFormHandlers() {
             resultsContent.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Downloading comments...</p></div>';
             
             // Submit the form via AJAX
-            fetch('/download', {
+            fetch('/download_yt', {
                 method: 'POST',
                 body: formData
             })

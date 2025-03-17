@@ -3,6 +3,7 @@ import os
 import json
 import pandas as pd
 from utils.yt_scraper import download_comments
+from utils.tc_scraper import download_twitch_chat
 from utils.llm_processor import generate_personas, summarize_comments, extract_useful_content
 from utils.clustering import cluster_comments
 
@@ -15,8 +16,8 @@ def index():
     """Home page with options to download comments or view analysis."""
     return render_template('index.html')
 
-@app.route('/download', methods=['POST'])
-def download():
+@app.route('/download_yt', methods=['POST'])
+def download_yt():
     """Download comments from YouTube videos."""
     youtube_ids = request.form.get('youtube_ids').split(',')
     results = {}
@@ -28,9 +29,22 @@ def download():
     
     return jsonify(results)
 
+@app.route('/download_tc', methods=['POST'])
+def download_tc():
+    """Download chat from Twitch Vods."""
+    twitch_ids = request.form.get('twitch_ids').split(',')
+    results = {}
+    
+    for twitch_id in twitch_ids:
+        twitch_id = twitch_id.strip()
+        success, message = download_twitch_chat(twitch_id)
+        results[twitch_id] = {'success': success, 'message': message}
+    
+    return jsonify(results)
+
+
 @app.route('/generate_personas', methods=['POST'])
 def create_personas():
-    """Generate personas based on downloaded comments."""
     youtube_id = request.form.get('youtube_id')
     num_personas = int(request.form.get('num_personas', 3))
     
