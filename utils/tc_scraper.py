@@ -1,37 +1,12 @@
 import os
 import pandas as pd
 import time
-import requests
-import json
-import csv
-import sys
+from chat_downloader import ChatDownloader
 
-# Import app config
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import DATA_DIR, MAX_COMMENTS_PER_VIDEO, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
-
-def get_twitch_access_token():
-    url = "https://id.twitch.tv/oauth2/token"
-    params = {
-        "client_id": TWITCH_CLIENT_ID,
-        "client_secret": TWITCH_CLIENT_SECRET,
-        "grant_type": "client_credentials"
-    }
-    response = requests.post(url, params=params)
-    response.raise_for_status()
-    return response.json()["access_token"]
-
-def download_twitch_chat(vod_id, max_comments=MAX_COMMENTS_PER_VIDEO):
+def download_twitch_chat(vod_id, max_comments=1000):
     try:
-        access_token = get_twitch_access_token()
-        url = f"https://api.twitch.tv/v5/videos/{vod_id}/comments"
-        headers = {
-            "Client-ID": TWITCH_CLIENT_ID,
-            "Authorization": f"Bearer {access_token}"
-        }
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        chat_data = response.json()
+        url = f"https://www.twitch.tv/videos/{vod_id}"
+        chat = ChatDownloader().get_chat(url)
 
         all_comments_dict = {
             'cid': [],
@@ -42,17 +17,17 @@ def download_twitch_chat(vod_id, max_comments=MAX_COMMENTS_PER_VIDEO):
         }
         
         count = 0
-        for comment in chat_data.get("comments", []):
-            all_comments_dict['cid'].append(comment.get("_id", ""))
-            all_comments_dict['text'].append(comment.get("message", {}).get("body", ""))
-            all_comments_dict['time'].append(comment.get("content_offset_seconds", ""))
-            all_comments_dict['author'].append(comment.get("commenter", {}).get("display_name", ""))
-            all_comments_dict['time_parsed'].append(time.strftime('%H:%M:%S', time.gmtime(comment.get("content_offset_seconds", 0))))
+        for message in chat:
+            all_comments_dict['cid'].append(message.get("message_id", ""))
+            all_comments_dict['text'].append(message.get("message", ""))
+            all_comments_dict['time'].append(message.get("time_in_seconds", ""))
+            all_comments_dict['author'].append(message.get("author", {}).get("name", ""))
+            all_comments_dict['time_parsed'].append(time.strftime('%H:%M:%S', time.gmtime(message.get("time_in_seconds", 0))))
             
             count += 1
             if max_comments > 0 and count >= max_comments:
                 break
-        
+        print(all_comments_dict)
         comments_df = pd.DataFrame(all_comments_dict)
         
         comments_dir = os.path.join(DATA_DIR, 'twitch_comments')
@@ -65,4 +40,3 @@ def download_twitch_chat(vod_id, max_comments=MAX_COMMENTS_PER_VIDEO):
     
     except Exception as e:
         return False, f"Error: {str(e)}"
-    
