@@ -18,7 +18,7 @@ def generate_personas(comments_df, num_personas=3):
     Based on the following {sample_size} YouTube comments, identify {num_personas} distinct personas or viewpoint clusters.
     For each persona, provide:
     1. A short name/title
-    2. A brief description of their viewpoint
+    2. A short 1 sentence description of their viewpoint 
     3. Key characteristics of their language and perspective
     
     Here are the comments:
@@ -105,7 +105,7 @@ def summarize_comments(comments_df, personas):
         Comments:
         {sample_comments}
         
-        Provide a summary that captures what this persona would find most important or relevant in these comments.
+        Provide a short summary (3-5 sentences) that captures what this persona would find most important or relevant in these comments.
         """
         
         response = client.chat.completions.create(
